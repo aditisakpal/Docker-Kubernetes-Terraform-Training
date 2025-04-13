@@ -1,4 +1,4 @@
-
+# DOCKER 
 ## Web Scraping in Jupyter with Docker + SQLite
 
 This project scrapes data from the web using Python (`requests` + `BeautifulSoup`), stores it in a local SQLite database, and runs inside a Docker container with Jupyter Notebook.
@@ -94,12 +94,177 @@ You can open the `.db` file using any SQLite viewer or directly in Python.
 - Only install what’s needed via pip (e.g. `requests`, `beautifulsoup4`).
 
 ---
+# MiniKube 
 
-##  Contact
+##  Web Scraping with Jupyter Notebook on Minikube
 
-If you have questions or suggestions, feel free to open an issue or reach out!
+This project scrapes web data using Python and stores it in an SQLite database — all running inside a Dockerized Jupyter Notebook deployed to Kubernetes via **Minikube**.
 
 ---
+
+## 🛠️ Tech Stack
+
+- Python 3
+- Jupyter Notebook
+- Docker
+- Kubernetes (Minikube)
+- SQLite
+- Libraries:
+  - `requests`
+  - `beautifulsoup4`
+
+---
+
+##  Folder Structure
+
+```
+py-docker/
+├── Dockerfile
+├── requirements.txt
+├── scraping.ipynb
+├── scraped_data.db       ← Created at runtime
+├── jupyter-deployment.yaml
+└── jupyter-service.yaml
+```
+
+---
+
+##  How to Run on Minikube
+
+### 1. Start Minikube
+
+```bash
+minikube start
+```
+
+If you're on Windows, make sure Docker is your driver:
+
+```bash
+minikube start --driver=docker
+```
+
+---
+
+### 2. Enable Minikube's Docker Env
+
+This lets you use your local Docker daemon **inside Minikube**:
+
+```bash
+eval $(minikube docker-env)
+```
+
+(Use `minikube docker-env --shell=cmd` if you’re on Windows CMD)
+
+---
+
+### 3. Build the Docker Image Inside Minikube
+
+```bash
+docker build -t py-jupyter-notebook .
+```
+
+---
+
+### 4. Deploy to Kubernetes
+
+Apply the deployment and service files:
+
+```bash
+kubectl apply -f jupyter-deployment.yaml
+kubectl apply -f jupyter-service.yaml
+```
+
+---
+
+### 5. Access the Jupyter Notebook
+
+Expose the service to your browser:
+
+```bash
+minikube service jupyter-service
+```
+
+This will open Jupyter in your browser via NodePort.
+
+---
+
+##  Example YAML Files
+
+### `jupyter-deployment.yaml`
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jupyter-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: jupyter
+  template:
+    metadata:
+      labels:
+        app: jupyter
+    spec:
+      containers:
+      - name: jupyter
+        image: py-jupyter-notebook
+        ports:
+        - containerPort: 8888
+        volumeMounts:
+        - name: notebook-data
+          mountPath: /home/jovyan/work
+      volumes:
+      - name: notebook-data
+        emptyDir: {}
+```
+
+### `jupyter-service.yaml`
+
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: jupyter-service
+spec:
+  type: NodePort
+  selector:
+    app: jupyter
+  ports:
+    - protocol: TCP
+      port: 8888
+      targetPort: 8888
+```
+
+---
+
+##  Saving the SQLite DB
+
+> Note: `scraped_data.db` is stored inside the pod. If you want it to persist:
+- Mount a host path
+- Use a PersistentVolumeClaim
+- Or download/export the `.db` file via Jupyter interface
+
+---
+
+##  Extras
+
+-  Built-in support for SQLite (no need to install it!)
+-  Fully containerized workflow
+-  Use Kubernetes to scale or restart Jupyter as needed
+
+---
+
+##  What the Notebook Does
+
+- Sends HTTP requests to a website
+- Parses HTML using BeautifulSoup
+- Extracts data like titles/links
+- Stores results in `scraped_data.db`
+
+---
+
 
 
 
