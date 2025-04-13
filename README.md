@@ -188,7 +188,7 @@ This will open Jupyter in your browser via NodePort.
 
 ---
 
-##  Example YAML Files
+##  YAML Files
 
 ### `jupyter-deployment.yaml`
 
@@ -264,6 +264,90 @@ spec:
 - Stores results in `scraped_data.db`
 
 ---
+
+# Jupyter Notebook Deployment on AWS EKS
+
+This project sets up a Kubernetes cluster using Amazon EKS and deploys a Jupyter Notebook server to it using a Docker container and kubectl.
+
+## Prerequisites
+
+- AWS CLI configured with appropriate IAM permissions
+- eksctl installed
+- kubectl installed
+- Docker installed
+- IAM permissions for EKS, EC2, and IAM roles
+- Proper VPC setup or permissions to let eksctl create one
+
+## Required IAM Policies
+
+Ensure the following IAM permissions are attached to your user or role:
+
+```json
+{
+  "Effect": "Allow",
+  "Action": [
+    "iam:CreateRole",
+    "iam:AttachRolePolicy",
+    "iam:PutRolePolicy",
+    "iam:PassRole",
+    "iam:TagRole",
+    "iam:GetRole",
+    "iam:ListRoleTags"
+  ],
+  "Resource": "*"
+}
+```
+
+## Additional managed AWS policies to attach:
+	•	AmazonEKSClusterPolicy
+	•	AmazonEKSWorkerNodePolicy
+	•	AmazonEKSServicePolicy
+	•	AmazonEC2ContainerRegistryFullAccess
+	•	AmazonS3ReadOnlyAccess
+	•	AWSLambda_FullAccess
+	•	AWSLambdaBasicExecutionRole
+	•	IAMUserChangePassword
+
+## Steps to Deploy
+
+### 1. Create EKS Cluster
+
+eksctl create cluster --name jupyter-cluster --region us-east-1
+
+If the cluster already exists, delete the old one:
+
+eksctl delete cluster --name jupyter-cluster --region us-east-1
+
+### 2. Configure kubectl to Use the Cluster
+
+aws eks update-kubeconfig --region us-east-1 --name jupyter-cluster
+
+### 3. Verify Cluster Access
+
+kubectl get nodes
+
+### 4. Deploy Jupyter Notebook
+
+kubectl apply -f deployment.yaml
+
+
+---
+
+## Troubleshooting
+
+### Common Errors
+- “AlreadyExistsException”: A cluster or stack with the same name already exists. Use eksctl delete cluster to remove it first.
+- “UnauthorizedOperation” or “UnauthorizedTaggingOperation”: Make sure the IAM user has the correct permissions.
+- “Connection refused on port 8443”: The cluster is either not ready, or kubectl is not properly configured.
+
+---
+
+## Cleanup
+
+To delete the EKS cluster and associated resources:
+
+eksctl delete cluster --name jupyter-cluster --region us-east-1
+
 
 
 
